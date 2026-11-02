@@ -15,7 +15,7 @@ def main(jobs):
              ROOT/'scripts/kaggle_shape_search.py', ROOT/'scripts/kaggle_multiscale_v3.py',
              ROOT/'scripts/kaggle_quality_v3.py', ROOT/'scripts/kaggle_efficient_v3.py',
              ROOT/'scripts/kaggle_quality_full_v3.py', ROOT/'scripts/kaggle_sampling_v4.py',
-             ROOT/'scripts/prepare_dark_negatives.py']
+             ROOT/'scripts/prepare_dark_negatives.py', ROOT/'scripts/kaggle_instances_v5.py']
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in files:
@@ -35,6 +35,7 @@ def main(jobs):
             'arjunvijayprakash/solar-filament-refinement-full-check']),
         ('multiscale-v3', 'kaggle_multiscale_v3.py', True, (0, 1),
          ['arjunvijayprakash/solar-filament-refine-v2']),
+        ('instances-v5', 'kaggle_instances_v5.py', True, (0, 1), []),
         ('sampling-v4', 'kaggle_sampling_v4.py', True, (0, 1),
          ['arjunvijayprakash/solar-filament-refine-v2']),
     ):
@@ -63,5 +64,5 @@ def main(jobs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--job', action='append', choices=(
-        'shape-search-v3', 'quality-v3', 'multiscale-v3', 'efficient-v3', 'quality-full-v3', 'sampling-v4'))
+        'shape-search-v3', 'quality-v3', 'multiscale-v3', 'efficient-v3', 'quality-full-v3', 'sampling-v4', 'instances-v5'))
     main(parser.parse_args().job)

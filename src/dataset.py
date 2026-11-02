@@ -208,12 +208,15 @@ def load_image_cache(record):
 
 class CropDataset:
     def __init__(self, records, crop=512, samples=1000, seed=42, augment=True,
-                 scale_range=(1., 1.), balance_physical=False, foreground_probability=.65):
+                 scale_range=(1., 1.), balance_physical=False, foreground_probability=.65,
+                 instance_balanced=False, dark_negative_probability=0.):
         self.records, self.crop, self.samples = records, crop, samples
         self.seed, self.epoch, self.augment, self.skip_before = seed, 0, augment, 0
-        if not 0 < scale_range[0] <= scale_range[1] or not 0 <= foreground_probability <= 1:
+        if (not 0 < scale_range[0] <= scale_range[1] or not 0 <= foreground_probability <= 1
+                or not 0 <= dark_negative_probability <= 1-foreground_probability):
             raise ValueError('Invalid crop scales or foreground sampling probability')
         self.scale_range, self.foreground_probability = scale_range, foreground_probability
+        self.instance_balanced, self.dark_negative_probability = instance_balanced, dark_negative_probability
         grouped = defaultdict(list)
         if balance_physical:
             for record in records:
@@ -243,9 +246,23 @@ class CropDataset:
         h, w = max(h, c), max(w, c)
         with np.load(record['cache']) as z:
             mask = z['mask']
-            if rng.random() < self.foreground_probability and mask.any():
-                points = np.argwhere(mask > 0)
+            draw = rng.random()
+            if draw < self.foreground_probability and mask.any():
+                if self.instance_balanced:
+                    instances = z['instances']
+                    objects = np.unique(instances)
+                    objects = objects[objects > 0]
+                    chosen = objects[int(rng.integers(len(objects)))]
+                    points = np.argwhere(instances == chosen)
+                else:
+                    points = np.argwhere(mask > 0)
                 cy, cx = points[rng.integers(len(points))]
+                top = int(np.clip(cy-rng.integers(c), 0, h-c))
+                left = int(np.clip(cx-rng.integers(c), 0, w-c))
+            elif (draw < self.foreground_probability+self.dark_negative_probability
+                  and record.get('dark_negative_centers')):
+                centers = record['dark_negative_centers']
+                cy, cx = centers[int(rng.integers(len(centers)))]
                 top = int(np.clip(cy-rng.integers(c), 0, h-c))
                 left = int(np.clip(cx-rng.integers(c), 0, w-c))
             else:

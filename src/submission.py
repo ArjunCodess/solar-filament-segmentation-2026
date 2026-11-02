@@ -82,6 +82,9 @@ def predict(args):
         raise ValueError('Ensemble preprocessing differs')
     params = json.loads(Path(args.params).read_text())['parameters'] if args.params else {}
     quality_model = json.loads(Path(args.quality_model).read_text()) if args.quality_model else None
+    maps_output = Path(args.maps_output) if args.maps_output else None
+    if maps_output:
+        maps_output.mkdir(parents=True, exist_ok=True)
     paths = sorted(p for p in Path(args.images).iterdir() if p.suffix.lower() in {'.jpg', '.jpeg', '.png'})
     if not paths:
         raise ValueError('No test images found')
@@ -105,6 +108,9 @@ def predict(args):
                 predicted[1:] = 0
             member_maps.append(predicted)
         maps = np.average(member_maps, axis=0, weights=weights).astype(np.float32)
+        if maps_output:
+            np.savez_compressed(maps_output/f'{path.stem}.npz', probabilities=maps.astype(np.float16),
+                                valid=valid, raw=raw, image_id=path.stem)
         labels = postprocess(maps, valid, **params)
         if quality_model is not None:
             labels = filter_quality(labels, maps, image[1], quality_model)
@@ -131,6 +137,7 @@ if __name__ == '__main__':
     p.add_argument('--output', default='submission.csv')
     p.add_argument('--params')
     p.add_argument('--quality-model', help='Portable quality regressor fitted on OOF proposals only')
+    p.add_argument('--maps-output', help='Cache test probabilities for decoder-only experiments without repeating GPU inference')
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--tile', type=int, default=512)
     p.add_argument('--tta', action='store_true')

@@ -57,7 +57,8 @@ def main():
     started = time.perf_counter()
     command = [sys.executable, '-u', '-m', 'src.submission', '--images', str(test),
         '--checkpoints', 'weights/model.pt', '--params', 'postprocess.json', '--device', 'cuda',
-        '--tile', '512', '--tta', '--tta-batch-size', '4', '--output', 'submission.csv']
+        '--tile', '512', '--tta', '--tta-batch-size', '4', '--output', 'submission.csv',
+        '--maps-output', str(root/'efficient_test_maps')]
     subprocess.run(command, cwd=release, check=True)
     elapsed = time.perf_counter()-started
     validation = validate_submission(release/'submission.csv',

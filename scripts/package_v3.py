@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def main(jobs):
     files = [*sorted((ROOT/'src').glob('*.py')), ROOT/'requirements.txt',
              ROOT/'scripts/kaggle_shape_search.py', ROOT/'scripts/kaggle_multiscale_v3.py',
-             ROOT/'scripts/kaggle_quality_v3.py', ROOT/'scripts/kaggle_efficient_v3.py']
+             ROOT/'scripts/kaggle_quality_v3.py', ROOT/'scripts/kaggle_efficient_v3.py',
+             ROOT/'scripts/kaggle_quality_full_v3.py']
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in files:
@@ -24,6 +25,9 @@ def main(jobs):
     for name, script, gpu, folds, extra in (
         ('shape-search-v3', 'kaggle_shape_search.py', False, range(5), []),
         ('quality-v3', 'kaggle_quality_v3.py', False, range(5), []),
+        ('quality-full-v3', 'kaggle_quality_full_v3.py', True, range(5), [
+            'arjunvijayprakash/solar-filament-quality-v3',
+            'arjunvijayprakash/solar-filament-shape-search-v3']),
         ('efficient-v3', 'kaggle_efficient_v3.py', True, (), [
             'arjunvijayprakash/solar-filament-refine-v2',
             'arjunvijayprakash/solar-filament-refinement-comparison',
@@ -56,5 +60,5 @@ def main(jobs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--job', action='append', choices=(
-        'shape-search-v3', 'quality-v3', 'multiscale-v3', 'efficient-v3'))
+        'shape-search-v3', 'quality-v3', 'multiscale-v3', 'efficient-v3', 'quality-full-v3'))
     main(parser.parse_args().job)

@@ -59,6 +59,49 @@ The public notebook subset and complete-fold results have different scopes.
 Saved maps cover only 16 physical observations per original experiment. They
 screen decoder ideas but cannot establish complete-fold improvement.
 
+## Verified results after retrieval
+
+- Calibrated ensemble: full folds 1-4 reference PQ 0.383435 versus 0.380625
+  for the submitted baseline. All 905 unique view rows were checked and PQ was
+  independently recomputed. Its 1,682-instance CSV has zero format errors and
+  zero overlapping pixels. Submission 57898046 completed at public PQ 0.33,
+  matching the previously accepted public score rather than improving it.
+- Shape search: selected mean probability >= 0.7 and grouping radius four,
+  with equal backbone weights, foreground threshold 0.5, confident seed 0.65,
+  and minimum area 256. Saved-map held-out PQ is 0.405923 versus 0.401225 for
+  calibrated components and 0.398905 for submitted extraction on those views.
+  Medium/large hit rates decline slightly, so the score alone does not justify
+  promotion. No separate shape submission has been made.
+- Quality filter: grouped fold-0 selection used 229 proposals in 13 temporal
+  groups and chose minimum predicted quality 0.2. On the same 100 held-out
+  views, PQ is 0.415530 versus 0.401225 for calibrated area filtering and
+  0.387242 for the corresponding unfiltered, area-64 proposals. Each of folds
+  1-4 improves relative to the calibrated baseline. All values were recomputed.
+- Paired training: on all 215 fold-1 views, mask-only multiscale continuation
+  reaches PQ 0.408136 and topology control 0.402440. The earlier refined model
+  reaches 0.407945 with 512-pixel inference, so the tiny apparent gain also
+  changes inference configuration. Mask-only misses all 22 small instances;
+  topology control matches three. Mask-only skeleton coverage is also lower.
+  Do not expand or promote this recipe from PQ alone.
+- The isolated source release passes the expanded test suite. A dedicated
+  private Git repository now exists at
+  https://github.com/ArjunCodess/solar-filament-segmentation-2026 . It remains a
+  source snapshot until selected weights, notebook, and final report are added.
+
+Two explicit follow-up GPU jobs have been launched. `efficient-v3` measures the
+single refined model and packages weights with code and notebook. `quality-full-v3`
+checks all 905 held-out views and retains a quality-filter candidate only if PQ
+improves by at least 0.005 while skeleton recall drops by at most 0.01 and small
+instance hit rate drops by at most 0.02. Only then does that finite kernel run
+D4 test inference. It does not submit automatically.
+
+The next implemented sampling options are `--instance-balanced` and
+`--dark-negative-probability`. The former samples target objects uniformly before
+choosing a positive pixel. The latter uses centers prepared by
+`scripts/prepare_dark_negatives.py`, excluding the dilated union of every
+training annotator's foreground and excluding held-out observations entirely.
+These options are tested but have no measured training improvement yet.
+
 ## Promotion rules
 
 - Recompute pooled PQ from all per-view sufficient statistics. Compare policies

@@ -22,7 +22,8 @@ def main():
         'check_submission.py', 'kaggle_train.py', 'kaggle_calibrate_v2.py', 'kaggle_infer_v2.py',
         'kaggle_refine_v2.py', 'kaggle_shape_search.py', 'kaggle_quality_v3.py',
         'kaggle_multiscale_v3.py', 'kaggle_efficient_v3.py', 'package_v3.py',
-        'audit_validation_distance.py', 'smoke.py', 'finalize_local_run.py', 'build_source_release.py')]
+        'audit_validation_distance.py', 'smoke.py', 'finalize_local_run.py', 'build_source_release.py',
+        'prepare_dark_negatives.py', 'redecode_submission.py', 'kaggle_quality_full_v3.py')]
     for source in selected:
         target = destination/source.relative_to(ROOT)
         target.parent.mkdir(parents=True, exist_ok=True)

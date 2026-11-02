@@ -62,6 +62,9 @@ def run(args):
     if args.device == 'cuda' and not torch.cuda.is_available():
         raise RuntimeError('CUDA requested, but this Python environment has no usable CUDA PyTorch')
     manifest = json.loads(Path(args.manifest).read_text())
+    if (args.dark_negative_probability and
+            manifest.get('dark_negative_sampling', {}).get('held_out_fold') != args.fold):
+        raise ValueError('Dark-negative sampling must be prepared for this held-out fold')
     records = manifest['records']
     folds = pd.read_csv(Path(args.manifest).with_name('folds.csv'), dtype={'image_id':str}).set_index('image_id').fold
     train = [r for r in records if folds[str(r['id'])] != args.fold]
@@ -73,7 +76,9 @@ def run(args):
     dataset = CropDataset(train, args.crop, args.samples, args.seed,
                           scale_range=(args.scale_min, args.scale_max),
                           balance_physical=args.balance_physical,
-                          foreground_probability=args.foreground_probability)
+                          foreground_probability=args.foreground_probability,
+                          instance_balanced=args.instance_balanced,
+                          dark_negative_probability=args.dark_negative_probability)
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.workers,
                         pin_memory=args.device == 'cuda', drop_last=False,
                         generator=torch.Generator().manual_seed(args.seed))
@@ -110,8 +115,10 @@ def run(args):
         previous = resumed['config']
         for key in ('architecture', 'fold', 'annotation_sha256', 'epochs', 'samples', 'focal_alpha', 'encoder_lr_scale',
                     'crop', 'batch_size', 'accumulate', 'lr', 'seed', 'no_topology', 'no_auxiliary',
-                    'scale_min', 'scale_max', 'balance_physical', 'foreground_probability'):
-            defaults = {'scale_min': 1., 'scale_max': 1., 'balance_physical': False, 'foreground_probability': .65}
+                    'scale_min', 'scale_max', 'balance_physical', 'foreground_probability',
+                    'instance_balanced', 'dark_negative_probability'):
+            defaults = {'scale_min': 1., 'scale_max': 1., 'balance_physical': False, 'foreground_probability': .65,
+                        'instance_balanced': False, 'dark_negative_probability': 0.}
             if previous.get(key, defaults.get(key)) != config[key]:
                 raise ValueError(f'Resume configuration changed: {key}')
         model.load_state_dict(resumed['model'])
@@ -205,6 +212,8 @@ def parser():
     p.add_argument('--scale-max', type=float, default=1.)
     p.add_argument('--balance-physical', action='store_true', help='Sample physical observations uniformly, then one annotator')
     p.add_argument('--foreground-probability', type=float, default=.65)
+    p.add_argument('--instance-balanced', action='store_true', help='Choose foreground instances uniformly before choosing a pixel')
+    p.add_argument('--dark-negative-probability', type=float, default=0., help='Sample image-derived dark background centers prepared without held-out labels')
     p.add_argument('--batch-size', type=int, default=1)
     p.add_argument('--accumulate', type=int, default=4)
     p.add_argument('--workers', type=int, default=0)

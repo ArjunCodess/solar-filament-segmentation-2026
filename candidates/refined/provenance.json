@@ -1,0 +1,30 @@
+{
+  "checkpoint_sha256": "ebd61a8919b7d6edbe7a59d263de76b0b316b73f1e5711a1600bc6f74c046dfb",
+  "source_checkpoint": "/kaggle/input/solar-filament-refine-v2/solar/runs/refine_v2/convnext_unetpp/fold1/best.pt",
+  "source_fold": 1,
+  "architecture": "convnext_unetpp",
+  "members": 1,
+  "tta": "D4",
+  "tile": 512,
+  "tta_batch_size": 4,
+  "inference_seconds": 1852.5333348279999,
+  "seconds_per_observation": 10.291851860155555,
+  "validation": {
+    "rows": 1465,
+    "images_with_predictions": 177,
+    "images_without_predictions": [
+      "20180507140210Th",
+      "20200310113230Ch",
+      "20211214174010Mh"
+    ],
+    "encoding": "pycocotools compressed COCO counts, Fortran order",
+    "overlapping_pixels": 0,
+    "format_errors": 0
+  },
+  "validation_scope": "Full fold 1 without D4, policy fitted on fold 0; separate earlier kernel",
+  "reference_pq_without_d4": 0.40794460754334233,
+  "portability_scope": "Executed in a fresh Kaggle session from the packaged local weights and source",
+  "torch_version": "2.11.0+cu128",
+  "gpu": "Tesla T4",
+  "submission_sha256": "6b69e5d938aff2bf8fa087fa17eef645c0f02212c226b186993e36787d17c9a2"
+}

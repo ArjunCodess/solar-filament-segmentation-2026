@@ -1,5 +1,5 @@
 {
-  "status": "source snapshot; final model and weights pending",
+  "status": "research release with exact portable 0.34 candidate; final organizer delivery pending",
   "files": {
     "src/__init__.py": "08dd2172d153f3912dbdceaa5a810de9fd8bb3b133a95b391972d9eb5c8a6a2c",
     "src/calibration.py": "24933ce0b561031f6fa159f9cd6f4cc48d67bb3e7920a479a78505f108fcbebe",
@@ -29,10 +29,18 @@
     "paper/working_notes.tex": "41a5de793f784398ee32d8751187dd453d748c6b0733dced3ed909da65682093",
     "paper/working_notes.pdf": "24da3ba771552e97717e11cf0fe8f6539d30e121f46a9f19b412b4f52ae2694d",
     "paper/kaggle_qualitative.png": "ce7bbf0b3d707964a38e57bc7f8ff845601090cf337726159fdd3266102b84ce",
-    "docs/competitive_campaign.md": "8eb5552b7049aaeff0eb989830583f2ac55307c6d20551da27c5d44f8e40a2ff",
+    "docs/competitive_campaign.md": "0facf0a4fac3f8fc2de480e3bbce9eedadc841401e152510106ab87876141964",
+    "paper/quality_filter_diagnostic.png": "f18c27c3b08a2438ef1ae304bb02939ee533817028407263ce7cf078acaea095",
+    "paper/organizer_report.pdf": "f02639c1b6852b6868a5d6f2c79677abf38d8b2776c436ff78afec3aa78f3878",
+    "paper/organizer/main.tex": "af74709a472e2f33a2bd5af7e23fbf549f012abc576eb57f60cfa1ce48e499ea",
+    "paper/organizer/preamble.tex": "f969576cf3eb1c7ddb37243ef171ccac7e81e0f6e86919a9547b379115346e16",
+    "paper/organizer/main.bib": "7357943b94c109a36c34ffd42ab4f2c5b408542b8b7ae70a9d3d69d3821119fc",
     "docs/method_walkthrough.md": "d7fda0cd4b658d70bfe103082a5a8d90c9d89b2bd61a43b88cd272227c12d3b7",
     "reference/self_evaluation_source.py": "7e3751df3d5b3807d09090842bed77509b71d50eb981f3486c737af8ec231fb4",
     "reference/README.md": "4e31aea4a543e28c1e4700641f79b897c1e036c73a2e5e246b333dd890cbf625",
+    "reference/organizer-template/main.bib": "ae25696caff151b73e8e1f04d9d815634aec45d5af4e730ca020b62ce3a2afda",
+    "reference/organizer-template/main.tex": "f9bb569327cde32e2738b8771a1db45064da46aefa3b76b143e83720154577a6",
+    "reference/organizer-template/preamble.tex": "f969576cf3eb1c7ddb37243ef171ccac7e81e0f6e86919a9547b379115346e16",
     "tests/fixtures/pilot_working_notes.tex": "065ced00332be9766eaeae193280a7186f0e1f7cb100e49972994d5f7b9724b1",
     "configs/baseline_postprocess.json": "8c95ab8dd9af73b931b27ed5e0ece714b954d4925de60b44de09abccd2cfbd52",
     "scripts/check_submission.py": "6c3840e8eab207ebd1ebf2d51695decd7a90552288afa5c4c30e571c8b70c101",
@@ -44,13 +52,16 @@
     "scripts/kaggle_quality_v3.py": "65fea934405a5abb0f919d4d354b2826e746671b416143b046012e8733b281ec",
     "scripts/kaggle_multiscale_v3.py": "d6a57ac94efeccc18b5e0dc47af5e685a145b6b51af2de15277052467166a114",
     "scripts/kaggle_efficient_v3.py": "29d922cd2205b2139b29f3965a562581012584e3519ba071e829e822748602df",
-    "scripts/package_v3.py": "777ec4de903f5c6b1bb497d2f9d0cfccc7be12c025dcb37410ccd95438949a2e",
+    "scripts/package_v3.py": "403698fc2622d8aad5a67f760ddc17bf3fbcee6e7bfa0fabd54c7ff2dfc33b0a",
     "scripts/audit_validation_distance.py": "f3daf80421523c17070dcd009e90c7d4e19a7d9224d21e9e78d43fa69f7893e9",
     "scripts/smoke.py": "fcbd27b925c3bfa7dd750266680d2a27408554f6936b78df40edbebae712613d",
     "scripts/finalize_local_run.py": "c6510aaabe11a0ff1ec2459a20183437b0d672d0ef5315a4a2da0564b7d9c240",
-    "scripts/build_source_release.py": "b30ee48aa43b850d46903bcc43a38d14e0c17f6c21dddc49a68d54726f5790ca",
+    "scripts/build_source_release.py": "3d1791f6e92c6b1072a6f277fb7cfcd7351ff1abce4fa24882b1e930fb30e9e5",
     "scripts/prepare_dark_negatives.py": "09718479c2818c42e0836ea45690c3d448910cb25cafa9a48ad65e18efb22ffb",
     "scripts/redecode_submission.py": "969c6e201c6bdda996752566ebb992175ad2b1fba5c02ec9d3d60537b5e7f73b",
-    "scripts/kaggle_quality_full_v3.py": "1bd40b619dd742dbe452e3a7f33bd81eb1d7f0a1e12b7a2097e9719333177ff5"
+    "scripts/kaggle_quality_full_v3.py": "1bd40b619dd742dbe452e3a7f33bd81eb1d7f0a1e12b7a2097e9719333177ff5",
+    "scripts/kaggle_sampling_v4.py": "67eed6e7a67b2eabc2755c0e3d78070922fc0ef60eda0112a3a6e436c7f82555",
+    "scripts/audit_quality_full.py": "88d770c3753e79e6606032f5c6e282394d00b2bbb995807c1d4f31e73e75c874",
+    "scripts/build_organizer_report.py": "9c308afede67825809b464cb1a280efb79caa7d667e78052c0d679775a697e87"
   }
 }

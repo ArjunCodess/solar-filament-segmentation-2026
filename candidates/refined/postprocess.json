@@ -1,0 +1,10 @@
+{
+  "parameters": {
+    "min_area": 256,
+    "mode": "components",
+    "seed_threshold": 0.7,
+    "threshold": 0.7
+  },
+  "pq": 0.3528729521803581,
+  "dice": 0.6599742848894921
+}

@@ -1,0 +1,12 @@
+{
+  "rows": 1465,
+  "images_with_predictions": 177,
+  "images_without_predictions": [
+    "20180507140210Th",
+    "20200310113230Ch",
+    "20211214174010Mh"
+  ],
+  "encoding": "pycocotools compressed COCO counts, Fortran order",
+  "overlapping_pixels": 0,
+  "format_errors": 0
+}

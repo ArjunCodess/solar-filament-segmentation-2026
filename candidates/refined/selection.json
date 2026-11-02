@@ -1,0 +1,11 @@
+{
+  "kaggle_submission_ref": "57906671",
+  "status": "COMPLETE",
+  "public_pq": 0.34,
+  "previous_best_public_pq": 0.33,
+  "selection": "Current best accepted candidate; further finite training experiment running",
+  "measured_inference_seconds": 1852.533334828,
+  "hardware": "one Tesla T4",
+  "validation_scope": "Full fold1, no D4, reference PQ0.4079446075; public score measures submitted D4 test predictions",
+  "final_organizer_form": "Pending accurate country/team details and final selection"
+}

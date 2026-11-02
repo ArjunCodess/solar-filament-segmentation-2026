@@ -31,6 +31,10 @@
     "paper/kaggle_qualitative.png": "ce7bbf0b3d707964a38e57bc7f8ff845601090cf337726159fdd3266102b84ce",
     "docs/competitive_campaign.md": "77997b43bcc5103a73a02d820a141e8d95247181d610497d981e5bd64b0e9c7b",
     "docs/method_walkthrough.md": "d7fda0cd4b658d70bfe103082a5a8d90c9d89b2bd61a43b88cd272227c12d3b7",
+    "reference/self_evaluation_source.py": "7e3751df3d5b3807d09090842bed77509b71d50eb981f3486c737af8ec231fb4",
+    "reference/README.md": "4e31aea4a543e28c1e4700641f79b897c1e036c73a2e5e246b333dd890cbf625",
+    "tests/fixtures/pilot_working_notes.tex": "065ced00332be9766eaeae193280a7186f0e1f7cb100e49972994d5f7b9724b1",
+    "configs/baseline_postprocess.json": "8c95ab8dd9af73b931b27ed5e0ece714b954d4925de60b44de09abccd2cfbd52",
     "scripts/check_submission.py": "6c3840e8eab207ebd1ebf2d51695decd7a90552288afa5c4c30e571c8b70c101",
     "scripts/kaggle_train.py": "b6c4aa981cf633363c933938b51138797b388796c6bf7efe7aaed10b6d846d5c",
     "scripts/kaggle_calibrate_v2.py": "a067426ac62932a01f7d57257956f341b3ece7c08abdd62b88959a5c49ed2618",
@@ -40,8 +44,10 @@
     "scripts/kaggle_quality_v3.py": "65fea934405a5abb0f919d4d354b2826e746671b416143b046012e8733b281ec",
     "scripts/kaggle_multiscale_v3.py": "d6a57ac94efeccc18b5e0dc47af5e685a145b6b51af2de15277052467166a114",
     "scripts/kaggle_efficient_v3.py": "728ac54a24bfa8cc2813007f7c7e20fd36480d2c92e64b1277f0783085150fee",
-    "scripts/package_v3.py": "c289cafc0a60954bfc2dfd8790872c0167af91d4599253db9f581f5661484d76",
+    "scripts/package_v3.py": "4682417af4a87b474ecc2dd671c7a39a5a811a8d6804f1b0ce3d743765403e1d",
     "scripts/audit_validation_distance.py": "f3daf80421523c17070dcd009e90c7d4e19a7d9224d21e9e78d43fa69f7893e9",
-    "scripts/smoke.py": "fcbd27b925c3bfa7dd750266680d2a27408554f6936b78df40edbebae712613d"
+    "scripts/smoke.py": "fcbd27b925c3bfa7dd750266680d2a27408554f6936b78df40edbebae712613d",
+    "scripts/finalize_local_run.py": "c6510aaabe11a0ff1ec2459a20183437b0d672d0ef5315a4a2da0564b7d9c240",
+    "scripts/build_source_release.py": "933b6ba316fc9a0ed22fde059008c2c1e52d7d2d5e06051aa41fd89564843a0c"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "parameters": {
+    "threshold": 0.5,
+    "spine_threshold": 1.1,
+    "boundary_threshold": 0.5,
+    "min_area": 256,
+    "bridge": 0
+  },
+  "source": "Exact frozen extraction for submission 57846445; reference to original v1 model"
+}

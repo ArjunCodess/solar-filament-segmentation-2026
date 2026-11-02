@@ -18,7 +18,7 @@ def main(jobs):
     with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
         for path in files:
             archive.writestr(path.relative_to(ROOT).as_posix(), path.read_bytes())
-        baseline = json.loads((ROOT/'outputs/kaggle/final/solar/postprocess.json').read_text())
+        baseline = json.loads((ROOT/'configs/baseline_postprocess.json').read_text())
         archive.writestr('baseline_policy.json', json.dumps({'parameters': baseline['parameters']}))
     payload = base64.b64encode(buffer.getvalue()).decode('ascii')
     for name, script, gpu, folds, extra in (

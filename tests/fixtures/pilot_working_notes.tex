@@ -1,0 +1,152 @@
+\documentclass[conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,graphicx,booktabs,url}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\pending}{\textit{Not measured}}
+\title{Spine-Guided Solar Filament Segmentation\\with Native-Resolution Features and Temporal Validation}
+\author{\IEEEauthorblockN{Arjun Vijay Prakash}
+\IEEEauthorblockA{Independent Researcher}}
+\begin{document}
+\maketitle
+\begin{abstract}
+Solar filament segmentation requires preserving narrow structures despite illumination variation and atmospheric artifacts. This note describes an implemented pipeline for IEEE Big Data Cup 2026 Challenge 02. Radial normalization and contrast-limited adaptive histogram equalization precede native-resolution crop training with full-disk context. SegFormer-B3 and ConvNeXt-Small U-Net++ members combine a full-resolution branch with mask, skeleton, and boundary heads. Dice, focal, and differentiable centerline losses supervise shape and connectivity. Five-fold validation groups physical observations and temporally adjacent dates while retaining independent annotation views. Controlled tests reproduce the public organizer notebook's Panoptic Quality calculation; a multiscale grid-IoU diagnostic is separately labeled provisional. A synthetic import-to-submission smoke test verifies integration. % PILOT_ABSTRACT
+Official competition data contain 707 physical training images, 1154 annotation views, 8199 annotations, and 180 test images. A 16-epoch SegFormer-B3 development run obtains reference PQ 0.1964 over fold 0 with default postprocessing. Separately tuned postprocessing obtains PQ 0.3506 on eight physically disjoint calibration observations. Architecture selection used earlier fold-0 pilot results, so these are development measurements rather than an unbiased benchmark or leaderboard score.
+% END_PILOT_ABSTRACT
+\end{abstract}
+\begin{IEEEkeywords}
+solar filaments, H-alpha, instance segmentation, topology, temporal validation
+\end{IEEEkeywords}
+
+\section{Introduction}
+Solar filament segmentation must retain thin extensions, distinguish nearby structures, and avoid atmospheric artifacts. MAGFiLO provides manually reviewed annotations for GONG H-alpha observations~\cite{magfilo}.
+
+The competition description motivates precise boundaries and coherent instances~\cite{challenge}. These goals require separating three questions: whether a pixel belongs to a filament, whether narrow filament material remains connected, and whether neighboring material belongs to the same instance. A single foreground probability map does not explicitly represent the latter two questions. The implemented system therefore predicts a mask, a skeleton heatmap, and an instance boundary map at native crop resolution.
+
+\section{Data and evaluation contracts}
+\subsection{Observation identity and independent annotators}
+The full MAGFiLO release contains 10,244 annotations associated with 1,593 annotator-image records; official dataset documentation identifies 958 unique observations~\cite{magfiloweb}. Thus 1,593 must not be interpreted as the number of independent physical images. Independent annotators may disagree about filament extent and whether nearby pieces form one object. The pipeline retains each annotation view as a training target rather than merging incompatible instance interpretations.
+
+Only the competition training JSON is an admissible input to the competition preparation command. The full public dataset is not used as an additional source of labels. Preparation rejects physical filename overlap with the supplied test directory, checks image dimensions, computes content hashes, and records the annotation-file hash. Byte-identical images share one cached intensity array and remain in one fold. Instance masks are retained as packed bit arrays so overlapping annotations are not lost when constructing a convenience instance-label image.
+
+\subsection{Temporal validation}
+Observation timestamps are parsed from GONG filenames. Sorted observations are connected into the same temporal group whenever adjacent timestamps differ by no more than three days. All annotator views of an observation remain together. These connected groups, rather than individual annotation rows, are assigned to five folds. The implementation raises an error if fewer than five independent groups exist; it never relaxes grouping silently.
+
+A greedy assignment balances a feature vector containing the physical-image count, mean filament count across annotator views, four normalized filament-area bins, and observation year. Year represents a coarse temporal stratum rather than a measured solar-cycle phase. The feature vector uses relative object area to remain meaningful across image dimensions. The split is deterministic under a recorded seed. Since grouping constraints can conflict with exact balance, fold histograms and dates must be inspected before final experiments.
+
+\subsection{The active scoring contract}
+The conference overview mentions multiscale IoU, whereas the updated competition overview names Panoptic Quality, or PQ~\cite{challenge}. The public self-evaluation notebook, version 6 retrieved on 28 October 2026, provides a concrete implementation. For each annotator-image view, it forms all ground-truth/prediction IoUs and includes every pair whose IoU exceeds 0.5. Predictions without a qualifying pair contribute false positives; annotations without a qualifying pair contribute false negatives. Counts are aggregated before division:
+\begin{equation}
+\mathrm{PQ}_{\mathrm{ref}} =
+\frac{\sum_{(i,j):\,\mathrm{IoU}_{ij}>0.5}\mathrm{IoU}_{ij}}
+{N_{\mathrm{pairs}}+0.5N_{\mathrm{FP}}+0.5N_{\mathrm{FN}}}.
+\end{equation}
+An empty denominator returns zero. This all-pairs behavior differs from one-to-one PQ~\cite{panoptic} for overlapping masks. Both conventions are implemented, with the public-notebook convention used for postprocessing selection. Controlled parity tests compare the local implementation against scoring functions extracted from the pinned notebook. They do not establish parity with unpublished server safeguards.
+
+Standard binary IoU, Dice, precision, recall, score-ranked AP at IoU thresholds 0.5 and 0.75, and hit/miss diagnostics are also available. The local multiscale diagnostic partitions native-resolution masks into $g\times g$ grids for $g\in\{1,2,4,8,16\}$. It averages IoU over cells containing foreground in either mask, then averages across grids. Cells empty in both masks are excluded. This definition is explicitly provisional and is not reported as the organizer's exact MIoU.
+
+\section{Method}
+\subsection{Radial normalization}
+An Otsu-thresholded grayscale image identifies the dominant bright disk contour. A least-squares circle fit estimates $(x_c,y_c,R)$, with repeated residual filtering to reject large contour deviations. Geometry checks reject constant images, insufficient limb evidence, and implausible radii. These failures require inspection rather than silently using a default disk.
+
+For each in-disk pixel, normalized radius is
+$r=\sqrt{(x-x_c)^2+(y-y_c)^2}/R$. Median intensity is estimated in 512 radial bins, missing bins are interpolated, and the resulting profile is smoothed. The corrected intensity is $I'(x,y)=I(x,y)/\max(\widetilde I(r),\epsilon)$, with a floor tied to the disk median. Percentile scaling and contrast-limited adaptive histogram equalization produce the normalized channel. Pixels beyond $0.995R$ are zeroed. The original grayscale intensity is retained as a second channel because correction may distort valid limb detail. All geometric targets remain aligned with the original pixels.
+
+\subsection{Auxiliary targets and permissions}
+COCO polygons and compressed or uncompressed COCO RLE are decoded using pycocotools. The foreground mask is the union of the training view's instances. Per-instance morphological gradients provide a boundary target. Mask skeletons are transformed into Gaussian heatmaps using the Euclidean distance to the nearest skeleton pixel.
+
+The competition overview states that other ground-truth metadata may not be used for training. Pending clarification, the default skeleton supervision is derived solely from approved training segmentation masks. The importer supports supplied spine polylines behind an explicit opt-in flag. A spine is the principal centerline, so supervising the principal spine alone would not necessarily supervise every barb; mask-derived skeletons retain thin side branches as well.
+
+\subsection{Local and full-disk representations}
+The first ensemble member uses a SegFormer-B3 encoder and multiscale decoder~\cite{segformer}; the second uses ConvNeXt-Small~\cite{convnext} in U-Net++~\cite{unetpp}. Each member is implemented through segmentation-models-pytorch. Decoder output is resized to the crop's native dimensions and fused with a separate convolutional branch that sees both grayscale channels before downsampling. A small context encoder processes a $128\times128$ full-disk normalized image and broadcasts a pooled context vector across the crop. This provides global appearance context but does not explicitly encode the crop's heliographic location.
+
+The fused representation produces three logit maps. The full-resolution branch gives narrow structures a path to the output that does not require reconstructing them from reduced-resolution encoder features. Whether this improves barb recovery must be measured, rather than inferred from the presence of a skip connection.
+
+\subsection{Optimization}
+The primary mask objective is
+\begin{equation}
+\mathcal L_{\mathrm{mask}}=0.4\mathcal L_{\mathrm{Dice}}+
+0.3\mathcal L_{\mathrm{focal}}+0.3\mathcal L_{\mathrm{clDice}}.
+\end{equation}
+The centerline term uses differentiable iterative skeletonization~\cite{cldice}. Let $S(P)$ be a soft prediction skeleton and $S(G)$ the mask-derived target skeleton. Topological precision measures the proportion of $S(P)$ inside $G$, while topological recall measures predicted probability along $S(G)$. Their harmonic mean defines clDice. This is a symmetric topological objective, rather than renaming skeleton recall as clDice. Empty-foreground crops use a probability penalty in place of undefined topology. Auxiliary binary cross-entropies on the heatmap and boundary maps are added with weight 0.1. The total objective is therefore the stated mask objective plus auxiliary supervision.
+
+Training samples native-resolution crops, selecting a foreground-biased crop with probability 0.65 and a uniformly located crop otherwise. Synchronized right-angle rotations and flips transform images and targets; intensity perturbations affect grayscale channels. AdamW, cosine learning-rate decay, gradient accumulation, and gradient clipping support a single GPU. CUDA mixed precision is enabled only when CUDA is usable. A conventional small U-Net provides a reproducible baseline. Its comparison disables topology and auxiliary losses.
+
+\subsection{Inference and instances}
+Overlapping tiles cover the image without resizing its narrow structures. Hann weights, bounded away from zero, blend tile probabilities. Dihedral test-time augmentation averages four rotations and their reflected variants after applying the inverse transformation to each prediction. Full-disk context is transformed consistently with each crop.
+
+Foreground probabilities are thresholded, predicted skeleton heatmaps provide instance seeds, and boundary probabilities influence watershed separation. Components without a qualifying skeleton seed receive a fallback marker. Optional bridging admits only pixels supported by both predicted spine probability and relaxed foreground evidence; no ground-truth spine is used at inference. Minimum area, foreground threshold, seed threshold, boundary threshold, and bridging are tuned on held-out probability maps. All development runs must retain an independent evaluation partition after tuning so the selected score is not mistaken for an unbiased estimate.
+
+Ensemble inference averages member probabilities before instance extraction. One CSV row is emitted for each nonempty predicted filament. The columns are \texttt{filament\_id} and \texttt{segmentation\_rle}; the latter contains only compressed COCO RLE counts. The validator checks unique IDs, known image stems, native dimensions, nonempty masks, and decode/re-encode identity.
+
+\section{Implementation verification and experimental protocol}
+The implementation has passed tests for disk geometry, target rasterization, RLE round trips, temporal grouping, D4 inversion, overlap blending, finite topology gradients, model output contracts, boundary-based separation, and submission rejection. Both larger architectures passed forward tests without pretrained downloads. Public-notebook parity tests cover perfect predictions, overlapping predictions, empty cases, and aggregate scoring.
+
+A separate synthetic smoke test creates ten artificial solar-like disks, imports annotations, builds folds, trains a small U-Net for one epoch, produces held-out maps, searches postprocessing parameters, and writes a CSV with zero local formatting errors. This test validates program integration only. Its scores and images are excluded from competition ablation reports.
+
+An unlabeled $2048\times2048$ NSO/GONG observation, 20111216103234Ch, was downloaded and preprocessed. Its fitted disk radius is 904.90 pixels with median residual 0.64 pixels. Original and corrected images and provenance are retained. This observation is excluded from training and provides no segmentation-accuracy evidence.
+
+\begin{table}[t]
+\centering
+\caption{Bounded single-fold pilot on fold 0.}
+\label{tab:ablations}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcc@{}}
+\toprule
+Configuration & Reference PQ & Grid MIoU$^*$\\
+\midrule
+ConvNeXt-Small U-Net++, full & 0.0350 & 0.1983\\
+SegFormer-B3, full system & 0.0484 & 0.2019\\
+SegFormer-B3, no topology & 0.0225 & 0.2056\\
+Conventional U-Net & 0.0191 & 0.1483\\
+\bottomrule
+\end{tabular*}
+\vspace{0.4ex}
+\parbox{\columnwidth}{\raggedright $^*$Grid MIoU is a local diagnostic, not an official MIoU. Reference PQ is the organizer notebook version 6 all-pairs IoU$>$0.5 score.}
+\end{table}
+
+% PILOT_PROTOCOL
+Table~\ref{tab:ablations} lists only the measured fold-0 pilot (3 epochs, 384 samples per epoch, 6 saved out-of-fold physical images). Reference PQ is the organizer notebook version 6 all-pairs score: every ground-truth/prediction pair with IoU greater than 0.5 is counted, and counts are aggregated before division. Grid MIoU is a local diagnostic and is not an official MIoU. Configurations that were not trained are omitted. This is not a five-fold result and not a leaderboard score.
+% END_PILOT_PROTOCOL
+
+\subsection{Completed longer development experiment}
+The SegFormer-B3 pilot checkpoint was continued for 16 epochs of 800 native-resolution crops per epoch. The crop size was 512, batch size was one, and gradients accumulated over two batches. AdamW used learning rate $10^{-4}$ with encoder multiplier 0.1, cosine scheduling, focal alpha 0.25, and CUDA mixed precision. The checkpoint with lowest training loss was selected. Loss decreased from 0.4451 at epoch 1 to 0.2283 at epoch 16. Mask-derived skeletons supplied topology supervision; provided spine metadata were disabled.
+
+With default postprocessing and D4 inference, the completed model attained reference PQ 0.1964, binary Dice 0.6227, and grid IoU diagnostic 0.3829 across 249 annotation views from 141 physical fold-0 observations. Binary diagnostics average annotators within each physical observation before averaging observations; PQ aggregates pair counts across annotation views.
+
+Probability maps were retained for 24 physical observations. Postprocessing was selected on 16 observations and evaluated on the remaining eight, with no physical-image overlap between those subsets. The latter contains 15 annotation views and yields reference PQ 0.3506, view-mean Dice 0.6692, and grid IoU diagnostic 0.4278. This small calibration result uses a different subset and aggregation for the binary diagnostics, so it cannot be compared directly against the full-fold score or the pilot table. Architecture and loss choices already used fold-0 pilot results, and the calibration partition does not impose an additional temporal gap. An untouched temporal fold is still required for model selection evidence.
+
+The candidate CSV from this longer model contains 1983 instances over all 180 test observations with zero local format errors. It is retained separately from the 4690-row pilot ensemble submission. Neither file has a reported leaderboard score.
+
+Qualitative reporting code constructs matched raw-image, ground-truth, baseline, and proposed-model panels from actual held-out predictions. It checks that image and annotation-view IDs match before plotting and adds native-pixel detail crops. % PILOT_QUALITATIVE
+Figure~\ref{fig:qualitative} shows one held-out pilot view. The example illustrates the remaining false positives.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{qualitative.png}
+\caption{One held-out fold-0 pilot view and a native-pixel detail.}
+\label{fig:qualitative}
+\end{figure}
+% END_PILOT_QUALITATIVE
+
+\section{Limitations and completion requirements}
+The CUDA runtime on G: detects the RTX 4060. Both ensemble members pass synthetic mixed-precision optimizer steps at crop size 512, and the current verified suite passes 24 tests, including a resume regression that verifies skipped batches perform no cache reads and subsequent sampling matches uninterrupted execution. % PILOT_ACCESS
+Official competition data contain 707 physical training images, 1154 annotation views, 8199 annotations, and 180 test images. Local validation of the submission file reports 4690 rows, 180 images with predictions, 0 images without predictions, and 0 format errors. This validates file encoding, not segmentation accuracy.
+% END_PILOT_ACCESS
+
+Other limitations require empirical checks. Residual atmospheric structure can bias radial medians, CLAHE can amplify noise, and boundary seeds can over-segment one physical filament. The three-day temporal grouping does not guarantee independence from longer-lived solar structures, so a solar-rotation-scale sensitivity analysis is warranted. Model probability averaging and threshold tuning require validation, and performance after tuning requires an untouched evaluation fold. The public reference notebook does not document every hidden server safeguard.
+
+% PILOT_CLOSE
+Authors, affiliations, and the unfinished planned ablations remain open. 
+% END_PILOT_CLOSE
+
+\begin{thebibliography}{8}
+\bibitem{magfilo} A. Ahmadzadeh, R. Adhyapak, K. Chaurasiya, et al., ``A dataset of manually annotated filaments from H-alpha observations,'' \emph{Scientific Data}, vol. 11, p. 1031, 2024, doi: 10.1038/s41597-024-03876-y.
+\bibitem{magfiloweb} MLEcoFi, ``MAGFiLO: Manually Annotated GONG Filaments in H-Alpha Observations,'' \url{https://www.mlecofi.net/magfilo}, accessed Oct. 28, 2026.
+\bibitem{challenge} A. Ahmadzadeh, D. J. Kempton, Q. Li, and A. A. Pevtsov, ``Solar Filament Segmentation Challenge 2026,'' Kaggle, 2026. \url{https://www.kaggle.com/competitions/filament-segmentation-2026}.
+\bibitem{panoptic} A. Kirillov et al., ``Panoptic segmentation,'' in \emph{Proc. IEEE/CVF CVPR}, 2019, doi: 10.1109/CVPR.2019.00963.
+\bibitem{segformer} E. Xie et al., ``SegFormer: Simple and efficient design for semantic segmentation with transformers,'' in \emph{NeurIPS}, 2021, arXiv:2105.15203.
+\bibitem{convnext} Z. Liu et al., ``A ConvNet for the 2020s,'' in \emph{Proc. IEEE/CVF CVPR}, 2022, arXiv:2201.03545.
+\bibitem{unetpp} Z. Zhou et al., ``UNet++: A nested U-Net architecture for medical image segmentation,'' \emph{DLMIA/ML-CDS}, 2018, arXiv:1807.10165.
+\bibitem{cldice} S. Shit et al., ``clDice: A novel topology-preserving loss function for tubular structure segmentation,'' in \emph{Proc. IEEE/CVF CVPR}, 2021, arXiv:2003.07311.
+\end{thebibliography}
+\end{document}

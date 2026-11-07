@@ -10,4 +10,4 @@ To reproduce the 0.34 candidate, change into `candidates/refined`, install its p
 
 Measured inference: 1852.5 seconds for 180 native-resolution observations on one Tesla T4, including D4 and map-cache writes. Local reference PQ 0.407945 covers complete fold 1 without D4, not the full five-fold D4 candidate.
 
-The organizer-format report is `paper/organizer_report.pdf`; original IEEE working notes remain separately available. A paired sampling experiment and a separate detector-plus-refiner experiment are running. Team and country are confirmed; final organizer-form delivery remains pending final candidate selection. No rank or award is guaranteed.
+The organizer-format report is `paper/organizer_report.pdf`; original IEEE working notes remain separately available. Sampling-v4 and instances-v5 are complete; neither targeted recipe was promoted. The seed-conditioned v6 experiment and exact D4 validation are running. The public decoder improved a 24-view screen and still requires complete-fold validation. Team and country are confirmed; final organizer-form delivery remains pending final candidate selection. No rank or award is guaranteed.

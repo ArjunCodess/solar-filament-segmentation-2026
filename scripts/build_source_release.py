@@ -17,7 +17,8 @@ def main():
                 ROOT/'paper/quality_filter_diagnostic.png', ROOT/'paper/organizer_report.pdf',
                 ROOT/'paper/organizer/main.tex', ROOT/'paper/organizer/preamble.tex',
                 ROOT/'paper/organizer/main.bib',
-                ROOT/'docs/method_walkthrough.md',
+                ROOT/'docs/method_walkthrough.md', ROOT/'docs/improvement_plan_20261107.md',
+                ROOT/'docs/public_solution_register_20261107.md', ROOT/'docs/recovered_experiments_20261107.json',
                 ROOT/'reference/self_evaluation_source.py', ROOT/'reference/README.md']
     selected += sorted((ROOT/'reference/organizer-template').glob('*'))
     selected += sorted((ROOT/'tests/fixtures').glob('*.tex'))
@@ -28,7 +29,10 @@ def main():
         'kaggle_multiscale_v3.py', 'kaggle_efficient_v3.py', 'package_v3.py',
         'audit_validation_distance.py', 'smoke.py', 'finalize_local_run.py', 'build_source_release.py',
         'prepare_dark_negatives.py', 'redecode_submission.py', 'kaggle_quality_full_v3.py',
-        'kaggle_sampling_v4.py', 'kaggle_instances_v5.py', 'audit_quality_full.py', 'build_organizer_report.py')]
+        'kaggle_sampling_v4.py', 'kaggle_instances_v5.py', 'kaggle_instances_v6.py',
+        'kaggle_exact_validation_v6.py', 'compare_candidates.py', 'audit_sampling_v4.py',
+        'screen_public_decoder.py', 'package_decoder_screen.py',
+        'audit_quality_full.py', 'build_organizer_report.py')]
     for source in selected:
         target = destination/source.relative_to(ROOT)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -61,8 +65,10 @@ def main():
         'on one Tesla T4, including D4 and map-cache writes. Local reference PQ '
         '0.407945 covers complete fold 1 without D4, not the full five-fold D4 candidate.\n\n'
         'The organizer-format report is `paper/organizer_report.pdf`; original IEEE '
-        'working notes remain separately available. A paired sampling experiment '
-        'and a separate detector-plus-refiner experiment are running. Team and country '
+        'working notes remain separately available. Sampling-v4 and instances-v5 are complete; '
+        'neither targeted recipe was promoted. The seed-conditioned v6 experiment and '
+        'exact D4 validation are running. The public decoder improved a 24-view screen '
+        'and still requires complete-fold validation. Team and country '
         'are confirmed; final organizer-form delivery remains pending final candidate selection. No rank or award is guaranteed.\n')
     (destination/'source_manifest.json').write_text(json.dumps({
         'status': 'research release with exact portable 0.34 candidate; final organizer delivery pending',

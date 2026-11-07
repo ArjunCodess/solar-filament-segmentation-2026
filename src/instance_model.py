@@ -1,4 +1,4 @@
-﻿"""Box proposals plus object-specific segmentation, using approved masks as labels."""
+"""Box proposals plus object-specific segmentation, using approved masks as labels."""
 from collections import defaultdict
 from functools import lru_cache
 
@@ -26,10 +26,12 @@ def build_detector(pretrained=True, image_size=1024):
         rpn_pre_nms_top_n_test=1000, rpn_post_nms_top_n_test=500)
 
 
-def build_refiner(pretrained=True):
+def build_refiner(pretrained=True, conditioned=False, in_channels=None):
     import segmentation_models_pytorch as smp
+    if in_channels is None:
+        in_channels = 3 if conditioned else 2
     return smp.Unet(encoder_name='resnet18', encoder_weights='imagenet' if pretrained else None,
-                    in_channels=2, classes=1)
+                    in_channels=in_channels, classes=1)
 
 
 def masks_to_boxes(masks):
@@ -57,11 +59,38 @@ def box_window(box, shape, margin=.15):
             min(shape[0], int(np.ceil(cy+height*(.5+margin)))))
 
 
-def refine_input(image, window, size=512):
+def refine_input(image, window, size=512, box=None, seed=None, conditioned=None):
     x0, y0, x1, y1 = window
     patch = cv2.resize(image[:, y0:y1, x0:x1].transpose(1, 2, 0),
                        (size, size), interpolation=cv2.INTER_LINEAR).transpose(2, 0, 1)
-    return np.ascontiguousarray((patch-.5)/.25, dtype=np.float32)
+    out = (patch-.5)/.25
+    use_condition = (box is not None or seed is not None) if conditioned is None else bool(conditioned)
+    if not use_condition:
+        return np.ascontiguousarray(out, dtype=np.float32)
+    if box is None and seed is None:
+        cx, cy = .5*(x0+x1), .5*(y0+y1)
+        bw, bh = (x1-x0)/1.3, (y1-y0)/1.3
+        box = (cx-.5*bw, cy-.5*bh, cx+.5*bw, cy+.5*bh)
+    cues = []
+    if box is not None:
+        bx0, by0, bx1, by1 = [float(v) for v in box]
+        u = x0+(np.arange(size, dtype=np.float32)+.5)*max(1, x1-x0)/size
+        v = y0+(np.arange(size, dtype=np.float32)+.5)*max(1, y1-y0)/size
+        in_box = ((u[None, :] >= bx0) & (u[None, :] <= bx1)
+                  & (v[:, None] >= by0) & (v[:, None] <= by1)).astype(np.float32)
+        cx, cy = .5*(bx0+bx1), .5*(by0+by1)
+        rx, ry = max(.5, .5*(bx1-bx0)), max(.5, .5*(by1-by0))
+        gauss = np.exp(-.5*(((u[None, :]-cx)/rx)**2+((v[:, None]-cy)/ry)**2)).astype(np.float32)
+        cues.append(.5*in_box+.5*gauss)
+    if seed is not None:
+        seed_arr = np.asarray(seed, dtype=np.float32)
+        if seed_arr.shape == image.shape[1:]:
+            seed_arr = seed_arr[y0:y1, x0:x1]
+        if seed_arr.shape != (size, size):
+            seed_arr = cv2.resize(seed_arr, (size, size), interpolation=cv2.INTER_LINEAR)
+        cues.append(np.clip(seed_arr, 0., 1.))
+    cue = np.mean(cues, axis=0, dtype=np.float32)[None]
+    return np.ascontiguousarray(np.concatenate([out, cue], axis=0), dtype=np.float32)
 
 
 class InstanceTrainingData:
@@ -103,14 +132,16 @@ def augmented_detection(image, boxes, rng):
     return np.ascontiguousarray(image), np.ascontiguousarray(boxes)
 
 
-def instance_crop(image, mask, rng, size=512):
+def instance_crop(image, mask, rng, size=512, conditioned=False, seed=None):
     box = masks_to_boxes([mask])[0]
     width, height = box[2]-box[0], box[3]-box[1]
     box += np.array([rng.uniform(-.1, .1)*width, rng.uniform(-.1, .1)*height,
                      rng.uniform(-.1, .1)*width, rng.uniform(-.1, .1)*height], np.float32)
     window = box_window(box, mask.shape, margin=float(rng.uniform(.1, .3)))
     x0, y0, x1, y1 = window
-    x = refine_input(image, window, size)
+    use_cond = bool(conditioned) or seed is not None
+    x = refine_input(image, window, size, box=box if use_cond else None,
+                     seed=seed if use_cond else None, conditioned=use_cond)
     y = cv2.resize(mask[y0:y1, x0:x1].astype(np.uint8), (size, size),
                    interpolation=cv2.INTER_NEAREST).astype(np.float32)[None]
     k = int(rng.integers(4))
@@ -128,7 +159,10 @@ def instance_loss(logits, target):
 
 
 @torch.inference_mode()
-def instance_proposals(detector, refiner, image, device, size=512):
+def instance_proposals(detector, refiner, image, device, size=512, conditioned=None):
+    if conditioned is None:
+        params = list(refiner.parameters())
+        conditioned = bool(params and params[0].ndim == 4 and params[0].shape[1] > 2)
     composite = np.stack([image[1], image[0], image[0]])
     output = detector([torch.from_numpy(composite).to(device)])[0]
     boxes = output['boxes'].cpu().numpy()
@@ -137,7 +171,9 @@ def instance_proposals(detector, refiner, image, device, size=512):
     for box, score in zip(boxes, scores):
         window = box_window(box, image.shape[1:])
         x0, y0, x1, y1 = window
-        patch = torch.from_numpy(refine_input(image, window, size))[None].to(device)
+        patch = torch.from_numpy(refine_input(
+            image, window, size, box=box if conditioned else None,
+            conditioned=bool(conditioned)))[None].to(device)
         probability = refiner(patch).sigmoid()[0, 0].cpu().numpy()
         probability = cv2.resize(probability, (x1-x0, y1-y0), interpolation=cv2.INTER_LINEAR)
         proposals.append({'window': window, 'score': float(score), 'probability': probability})

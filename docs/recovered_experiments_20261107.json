@@ -1,0 +1,31 @@
+{
+  "sampling_control": {
+    "pq": 0.418074503083056,
+    "views": 215,
+    "source": "outputs\\kaggle\\sampling-v4\\solar\\sampling_v4_sampling_control_full_fold1.csv",
+    "skeleton_recall": 0.7170519613053914,
+    "small_hits": 3,
+    "small_count": 22,
+    "small_hit_rate": 0.13636363636363635
+  },
+  "targeted_sampling": {
+    "pq": 0.3926889476278153,
+    "views": 215,
+    "source": "outputs\\kaggle\\sampling-v4\\solar\\sampling_v4_targeted_sampling_full_fold1.csv",
+    "skeleton_recall": 0.7619875789338365,
+    "small_hits": 5,
+    "small_count": 22,
+    "small_hit_rate": 0.22727272727272727
+  },
+  "instances_v5": {
+    "pq": 0.3253240536923937,
+    "views": 215,
+    "source": "outputs\\kaggle\\instances-v5\\solar\\instance_v5_full_fold1.csv"
+  },
+  "refined_reference": {
+    "pq": 0.40794460754334233,
+    "views": 215,
+    "source": "outputs\\kaggle\\refinement-full-check\\solar\\refined_full_fold1.csv"
+  },
+  "decision": "Do not promote targeted sampling or instances-v5. Control gain vs refined reference changes training and tiling, and lacks paired reference morphology evidence."
+}
